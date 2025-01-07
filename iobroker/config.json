@@ -3,9 +3,5 @@ version: "10.0.0"
 slug: example
 description: Example add-on
 url: "https://github.com/olivr2s/addon-repository/edit/main/iobroker"
-arch:
-  - arm64
-  - armv7
-  - amd64
 init: false
-image: "ghcr.io/buanet/iobroker:v10.0.0-build.20241226.234319-{arch}"
+image: "docker pull ghcr.io/buanet/iobroker:v10.0.0-build.20241226.234319-arm64v8"
