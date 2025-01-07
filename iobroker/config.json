@@ -1,7 +1,22 @@
-name: Example add-on
-version: "10.0.0"
-slug: example
-description: Example add-on
-url: "https://github.com/olivr2s/addon-repository/edit/main/iobroker"
-init: false
-image: "docker pull ghcr.io/buanet/iobroker:v10.0.0-build.20241226.234319-arm64v8"
+{
+  "name": "MQTT Explorer",
+  "version": "browser-1.0.3",
+  "slug": "mqtt_explorer",
+  "description": "MQTT Explorer is a comprehensive MQTT client that provides a structured overview of your MQTT topics and makes working with devices/services on your broker dead-simple.",
+  "arch": ["armhf", "armv7", "amd64", "aarch64"],
+  "startup": "application",
+  "boot": "auto",
+  "ingress": true,
+  "ingress_port": 4000,
+  "panel_icon": "mdi:network-pos",
+  "panel_admin": true,
+  "panel_icon": "mdi:access-point-network",
+  "image": "ghcr.io/buanet/iobroker:v10.0.0-build.20241226.234319-arm64v8",
+  "map": [ "addons" ],
+  "ports": {
+    "4000": null
+  },
+  "ports_description": {
+    "4000": "Exposed HTTP port"
+  }
+}
