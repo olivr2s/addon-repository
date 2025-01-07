@@ -1,16 +1,11 @@
-{
-  "name": "IoBroker add-on",
-  "version": "10.0.0",
-  "slug": "iobroker",
-  "description": "IoBroker addon for Home Assistant",
-  "arch": ["armhf", "armv7", "amd64", "aarch64"],
-  "startup": "application",
-  "boot": "auto",
-  "ingress": true,
-  "ingress_port": 4000,
-  "panel_icon": "mdi:network-pos",
-  "panel_admin": true,
-  "panel_icon": "mdi:access-point-network",
-  "image": "smeagolworms4/mqtt-explorer",
-  "map": [ "addons" ],
-}
+name: Example add-on
+version: "10.0.0"
+slug: example
+description: Example add-on
+url: "https://github.com/olivr2s/addon-repository/edit/main/iobroker"
+arch:
+  - arm64
+  - armv7
+  - amd64
+init: false
+image: "ghcr.io/buanet/iobroker:v10.0.0-build.20241226.234319-{arch}"
