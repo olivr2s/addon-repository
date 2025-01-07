@@ -11,6 +11,6 @@
   "panel_icon": "mdi:network-pos",
   "panel_admin": true,
   "panel_icon": "mdi:access-point-network",
-  "image": "ghcr.io/buanet/iobroker:v10.0.0-build.20241226.234319",
+  "image": "smeagolworms4/mqtt-explorer",
   "map": [ "addons" ],
 }
