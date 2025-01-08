@@ -1,0 +1,10 @@
+{
+  "build_from": {
+    "arm64": "ghcr.io/buanet/iobroker:arm64v8-latest",
+    "amd64": "ghcr.io/buanet/iobroker:amd64-latest",
+    "armv7": "ghcr.io/buanet/iobroker:arm32v7-13.7.0"
+  },
+  "codenotary": {
+    "signer": "olivr2s@gmail.com"
+  }
+}
