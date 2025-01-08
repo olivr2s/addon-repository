@@ -44,5 +44,5 @@
   "udev": true,
   "url": "https://github.com/olivr2s/addon-repository",
   "version": "1.0.0",
-  "webui": "[PROTO:ssl]://[HOST]:[PORT:80]"
+  "webui": "[PROTO:ssl]://[HOST]:[PORT:8081]"
 }
