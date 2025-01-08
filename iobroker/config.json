@@ -7,7 +7,7 @@
   "codenotary": "olivr2s@gmail.com",
   "description": "IoBroker addon for Home Assistant",
   },
-  "image": "ghcr.io/olivr2s/iobroker-{arch}",
+  "image": "ghcr.io/olivr2s/addon-repository/iobroker-{arch}",
   "init": false,
   "map": [
     "config:rw",
@@ -42,7 +42,7 @@
   },
   "slug": "iobroker",
   "udev": true,
-  "url": "https://github.com/olivr2s/addon-repository",
+  "url": "https://github.com/olivr2s/addon-repository/iobroker",
   "version": "1.0.0",
   "webui": "[PROTO:ssl]://[HOST]:[PORT:8081]"
 }
