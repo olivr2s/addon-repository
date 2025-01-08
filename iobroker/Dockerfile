@@ -1,106 +1,110 @@
-#################
-# 1 Build Image #
-#################
+FROM debian:bookworm-slim
 
-ARG BUILD_FROM
-ARG BUILD_VERSION
-FROM ${BUILD_FROM}
+LABEL org.opencontainers.image.title="Official ioBroker Docker Image" \
+      org.opencontainers.image.description="Official Docker image for ioBroker smarthome software (https://www.iobroker.net)" \
+      org.opencontainers.image.documentation="https://github.com/buanet/ioBroker.docker#readme" \
+      org.opencontainers.image.authors="André Germann <info@buanet.de>" \
+      org.opencontainers.image.url="https://github.com/buanet/ioBroker.docker" \
+      org.opencontainers.image.source="https://github.com/buanet/ioBroker.docker" \
+      org.opencontainers.image.base.name="debian:bookworm-slim" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${DATI}"
 
-##################
-# 2 Modify Image #
-##################
+ENV DEBIAN_FRONTEND="noninteractive"
 
-# Set S6 wait time
-ENV S6_CMD_WAIT_FOR_SERVICES=1 \
-    S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0 \
-    S6_SERVICES_GRACETIME=0
+# Copy files
+COPY scripts /opt/scripts
+COPY userscripts /opt/userscripts
 
-# Global LSIO modifications
-ADD "https://raw.githubusercontent.com/olivr2s/addon-repository/main/.templates/ha_lsio.sh" "/ha_lsio.sh"
-ARG CONFIGLOCATION="/config/addons_config/iobroker"
-RUN chmod 744 /ha_lsio.sh && if grep -qr "lsio" /etc; then /ha_lsio.sh "$CONFIGLOCATION"; fi && rm /ha_lsio.sh
-
-##################
-# 3 Install apps #
-##################
-
-# Add rootfs
-COPY rootfs/ /
-
-# Uses /bin for compatibility purposes
-# hadolint ignore=DL4005
-RUN if [ ! -f /bin/sh ] && [ -f /usr/bin/sh ]; then ln -s /usr/bin/sh /bin/sh; fi && \
-    if [ ! -f /bin/bash ] && [ -f /usr/bin/bash ]; then ln -s /usr/bin/bash /bin/bash; fi
-
-# Modules
-ARG MODULES="00-banner.sh 01-custom_script.sh 00-local_mounts.sh 00-smb_mounts.sh"
-
-# Automatic modules download
-ADD "https://raw.githubusercontent.com/olivr2s/addon-repository/main/.templates/ha_automodules.sh" "/ha_automodules.sh"
-RUN chmod 744 /ha_automodules.sh && /ha_automodules.sh "$MODULES" && rm /ha_automodules.sh
-
-# Manual apps
-ENV PACKAGES="jq \
+# Set up ioBroker
+RUN apt-get update && apt-get upgrade -y \
+    # Install prerequisites
+    && apt-get install -q -y --no-install-recommends \
+    apt-utils \
+    ca-certificates \
+    cifs-utils \
     curl \
-    cifs-utils"
+    gnupg \
+    gosu \
+    iputils-ping \
+    jq \
+    libatomic1 \
+    locales \
+    nfs-common \
+    procps \
+    python3 \
+    python3-dev \
+    tar \
+    tzdata \
+    udev \
+    wget \
+    # Generating locales
+    && sed -i 's/^# *\(de_DE.UTF-8\)/\1/' /etc/locale.gen \
+    && sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen \
+    && locale-gen \
+    # Prepare .docker_config
+    && mkdir /opt/.docker_config \
+    && echo "starting" > /opt/.docker_config/.healthcheck \
+    && echo "${VERSION}" > /opt/.docker_config/.thisisdocker \
+    && echo "${DATI}" > /opt/.docker_config/.build \
+    && echo "true" > /opt/.docker_config/.first_run \
+    # Prepare old .docker_config (needed until changed in iobroker)
+    && mkdir /opt/scripts/.docker_config \
+    && echo "${VERSION}" > /opt/scripts/.docker_config/.thisisdocker \
+    # Run iobroker installer
+    && curl -sL https://iobroker.net/install.sh -o install.sh \
+    && sed -i 's/NODE_MAJOR=[0-9]\+/NODE_MAJOR=${NODE}/' install.sh \
+    && sed -i 's|NODE_JS_BREW_URL=.*|NODE_JS_BREW_URL="https://nodejs.org"|' install.sh \
+    && bash install.sh \
+    # Deleting UUID from build
+    && iobroker unsetup -y \
+    && echo "true" > /opt/iobroker/.fresh_install \
+    # Backup initial ioBroker and userscript folder
+    && tar -cf /opt/initial_iobroker.tar /opt/iobroker \
+    && tar -cf /opt/initial_userscripts.tar /opt/userscripts \
+    # Setting up iobroker-user
+    && chsh -s /bin/bash iobroker \
+    && usermod --home /opt/iobroker iobroker \
+    && usermod -u 1000 iobroker \
+    && groupmod -g 1000 iobroker \
+    && chown root:iobroker /usr/sbin/gosu \
+    # Set permissions and ownership
+    && chown -R iobroker:iobroker /opt/scripts /opt/userscripts \
+    && chmod 755 /opt/scripts/*.sh \
+    && chmod 755 /opt/userscripts/*.sh \
+    # register maintenance command
+    && ln -s /opt/scripts/maintenance.sh /bin/maintenance \
+    && ln -s /opt/scripts/maintenance.sh /bin/maint \
+    && ln -s /opt/scripts/maintenance.sh /bin/m \
+    # Clean up installation cache
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && apt-get autoclean -y \
+    && apt-get autoremove \
+    && apt-get clean \
+    && rm -rf /tmp/* /var/tmp/* /root/.cache/* /root/.npm/* /var/lib/apt/lists/*
 
-# Automatic apps & bashio
-ADD "https://raw.githubusercontent.com/olivr2s/addon-repository/main/.templates/ha_autoapps.sh" "/ha_autoapps.sh"
-RUN chmod 744 /ha_autoapps.sh && /ha_autoapps.sh "$PACKAGES" && rm /ha_autoapps.sh
+# Default environment variables
+ENV BUILD="${BUILD}" \
+    DEBIAN_FRONTEND="teletype" \
+    LANG="de_DE.UTF-8" \
+    LANGUAGE="de_DE:de" \
+    LC_ALL="de_DE.UTF-8" \
+    SETGID=1000 \
+    SETUID=1000 \
+    TZ="Europe/Berlin"
 
-################
-# 4 Entrypoint #
-################
+# Default admin ui port
+EXPOSE 8081
 
-# Add entrypoint
-ENV S6_STAGE2_HOOK=/ha_entrypoint.sh
-ADD "https://raw.githubusercontent.com/olivr2s/addon-repository/main/.templates/ha_entrypoint.sh" "/ha_entrypoint.sh"
+# Change work dir
+WORKDIR /opt/iobroker/
 
-# Entrypoint modifications
-ADD "https://raw.githubusercontent.com/olivr2s/addon-repository/main/.templates/ha_entrypoint_modif.sh" "/ha_entrypoint_modif.sh"
-RUN chmod 777 /ha_entrypoint.sh /ha_entrypoint_modif.sh && /ha_entrypoint_modif.sh && rm /ha_entrypoint_modif.sh
+# Healthcheck
+HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
+    CMD ["/bin/bash", "-c", "/opt/scripts/healthcheck.sh"]
 
-# hadolint ignore=SC2013
-RUN \
-    for file in $(grep -Esril "/local/config/addons_config/iobroker" /etc /defaults); do sed -i "s=/local/config/addons_config/iobroker=/local/config=g" "$file"; done
+# Volume for persistent data
+VOLUME ["/opt/iobroker"]
 
-
-#
-#WORKDIR /
-#ENTRYPOINT [ "/usr/bin/env" ]
-#CMD [ "/ha_entrypoint.sh" ]
-#SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-############
-# 5 Labels #
-############
-
-ARG BUILD_ARCH
-ARG BUILD_DATE
-ARG BUILD_DESCRIPTION
-ARG BUILD_NAME
-ARG BUILD_REF
-ARG BUILD_REPOSITORY
-ARG BUILD_VERSION
-LABEL \
-    io.hass.name="${BUILD_NAME}" \
-    io.hass.description="${BUILD_DESCRIPTION}" \
-    io.hass.arch="${BUILD_ARCH}" \
-    io.hass.type="addon" \
-    io.hass.version=${BUILD_VERSION} \
-    maintainer="olivr2s (https://github.com/olivr2s)" \
-    org.opencontainers.image.title="${BUILD_NAME}" \
-    org.opencontainers.image.description="${BUILD_DESCRIPTION}" \
-    org.opencontainers.image.vendor="Home Assistant Add-ons" \
-    org.opencontainers.image.authors="olivr2s (https://github.com/olivr2s)" \
-    org.opencontainers.image.licenses="MIT" \
-    org.opencontainers.image.url="https://github.com/olivr2s" \
-    org.opencontainers.image.source="https://github.com/${BUILD_REPOSITORY}" \
-    org.opencontainers.image.documentation="https://github.com/${BUILD_REPOSITORY}/blob/main/README.md" \
-    org.opencontainers.image.created=${BUILD_DATE} \
-    org.opencontainers.image.revision=${BUILD_REF} \
-    org.opencontainers.image.version=${BUILD_VERSION}
-
-####################
-# 6 HealthcheckNOT #
-####################
+# Run startup-script
+ENTRYPOINT ["/bin/bash", "-c", "/opt/scripts/iobroker_startup.sh"]
