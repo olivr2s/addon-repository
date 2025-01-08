@@ -40,7 +40,7 @@
     "localdisks": "str?",
     "networkdisks": "str?"
   },
-  "slug": "piwigo",
+  "slug": "iobroker",
   "udev": true,
   "url": "https://github.com/olivr2s/addon-repository",
   "version": "1.0.0",
