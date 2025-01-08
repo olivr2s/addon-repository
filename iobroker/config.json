@@ -1,16 +1,48 @@
 {
-  "name": "IoBoker",
-  "version": "v1.0.0",
-  "slug": "IoBroker",
-  "description": "IoBroker add-on for Home assistant",
-  "arch": ["arm64v8", "arm32v7", "amd64"],
-  "startup": "application",
-  "boot": "auto",
-  "ingress": true,
-  "ingress_port": 8081,
-  "panel_icon": "mdi:network-pos",
-  "panel_admin": true,
-  "panel_icon": "mdi:access-point-network",
-  "image": "buanet/iobroker",
-  "map": [ "addons" ],
+  "arch": [
+    "arm64v8",
+    "amd64",
+    "arm32v7"
+  ],
+  "codenotary": "olivr2s@gmail.com",
+  "description": "IoBroker addon for Home Assistant",
+  },
+  "image": "ghcr.io/olivr2s/iobroker-{arch}",
+  "init": false,
+  "map": [
+    "config:rw",
+    "media:rw",
+    "share:rw",
+    "ssl"
+  ],
+  "name": "IoBroker",
+  "options": {
+    "PGID": 0,
+    "PUID": 0
+  },
+  "ports": {
+    "8081/tcp": 8081
+  },
+  "ports_description": {
+    "8081/tcp": "WebUI port"
+  },
+  "privileged": [
+    "SYS_ADMIN",
+    "DAC_READ_SEARCH"
+  ],
+  "schema": {
+    "PGID": "int",
+    "PUID": "int",
+    "TZ": "str?",
+    "cifsdomain": "str?",
+    "cifspassword": "str?",
+    "cifsusername": "str?",
+    "localdisks": "str?",
+    "networkdisks": "str?"
+  },
+  "slug": "piwigo",
+  "udev": true,
+  "url": "https://github.com/olivr2s/addon-repository",
+  "version": "1.0.0",
+  "webui": "[PROTO:ssl]://[HOST]:[PORT:80]"
 }
